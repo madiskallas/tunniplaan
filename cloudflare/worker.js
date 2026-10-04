@@ -11,6 +11,7 @@ const KOOL = "https://haabneeme.edupage.org";
 const TOITLUSTAMINE = "https://haabneeme.edu.ee/muu-info/toitlustamine/";
 const NADALAID = 3; // mitu nädalat ette (jooksev nädal kaasa arvatud)
 const VAHEMALU_SEK = 15 * 60;
+const ANDMETE_VERSIOON = 2; // suurenda, kui vastuse kuju muutub (siis ei anta vana vahemälu)
 
 const PAEVAD = ["Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev", "Pühapäev"];
 
@@ -48,7 +49,7 @@ export async function vasta(request, ctx) {
   if (request.method === "OPTIONS") return new Response(null, { headers: { ...CORS, "Access-Control-Allow-Methods": "GET" } });
 
   const klass = (new URL(request.url).searchParams.get("klass") || "4B").toUpperCase();
-  const vahemaluVoti = new Request(`https://vahemalu/${klass}`);
+  const vahemaluVoti = new Request(`https://vahemalu/v${ANDMETE_VERSIOON}/${klass}`);
   const vahemalu = caches.default;
   const vana = await vahemalu.match(vahemaluVoti);
   if (vana) return vana;

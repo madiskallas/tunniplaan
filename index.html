@@ -14,13 +14,14 @@
   .kuupaev { font-size: 1.4rem; text-align: center; color: #4a5a6b; margin-bottom: 18px; }
   .tund { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
           box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-  .aeg { font-size: 1.15rem; font-weight: 700; color: #1f6fb2; }
+  .aeg { font-size: 1.15rem; font-weight: 700; color: #1d2733; }
   .grupid { display: flex; gap: 10px; margin-top: 6px; }
   .grupid > div { flex: 1; min-width: 0; }
   .grupid > div + div { border-left: 2px dashed #cdd6e0; padding-left: 10px; }
-  .grupinimi { font-size: .9rem; font-weight: 700; color: #7a4fb5; }
+  .grupid > div.osa { border-radius: 12px; padding: 8px; border-left: none; }
+  .grupinimi { font-size: .9rem; font-weight: 700; color: #1d2733; }
   .aine { font-size: 1.5rem; font-weight: 800; margin: 2px 0; overflow-wrap: anywhere; }
-  .info { font-size: 1.1rem; color: #4a5a6b; }
+  .info { font-size: 1.1rem; color: #2b3540; }
   .vahe { text-align: center; font-size: 1.1rem; color: #4a5a6b; padding: 8px; margin-bottom: 10px;
           border: 2px dashed #cdd6e0; border-radius: 14px; }
   .sook { background: #ffd8a8; color: #7a3e00; border: none; font-size: 1.35rem; font-weight: 800; padding: 14px; }
@@ -31,10 +32,13 @@
 <main id="sisu"><p class="kuupaev">Laen tunniplaani…</p></main>
 <script src="andmed.js"></script>
 <script src="laadija.js"></script>
+<script src="seaded.js"></script>
 <script>
 const TZ = "Europe/Tallinn";
 const min = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// Aine seaded (emoji, värv); "Mudilaskoor (ringitund)" → "Mudilaskoor"
+const seade = (nimi) => { const S = window.SEADED || {}; return S[nimi] || S[String(nimi).replace(/\s*\(.*\)$/, "")] || {}; };
 const kell = (hhmm) => hhmm.replace(/^0/, "");
 
 // Praegune Eesti aeg kujul { kuupaev: "2026-10-05", minut: 545 }. ?aeg=2026-10-09T17:00 testimiseks.
@@ -59,13 +63,14 @@ function valiPaev(andmed, nyyd) {
 
 function tunniKaart(tunnid) {
   const t0 = tunnid[0];
-  const osa = (t) => `<div>
+  const yksVarv = tunnid.every((t) => seade(t.aine).varv === seade(t0.aine).varv);
+  const osa = (t) => `<div class="${tunnid.length > 1 && !yksVarv ? "osa" : ""}" style="${!yksVarv && seade(t.aine).varv ? `background:${seade(t.aine).varv}` : ""}">
       ${t.grupp ? `<div class="grupinimi">${esc(t.grupp)}</div>` : ""}
-      <div class="aine">${esc(t.aine)}</div>
+      <div class="aine">${seade(t.aine).emoji ? esc(seade(t.aine).emoji) + " " : ""}${esc(t.aine)}</div>
       <div class="info">👩‍🏫 ${esc(t.opetajad.join(", ") || "—")}</div>
       <div class="info">🚪 ${esc(t.ruum || "—")}</div>
     </div>`;
-  return `<div class="tund"><div class="aeg">🕘 ${kell(t0.algus)}–${kell(t0.lopp)}</div>
+  return `<div class="tund" style="${yksVarv && seade(t0.aine).varv ? `background:${seade(t0.aine).varv}` : ""}"><div class="aeg">🕘 ${kell(t0.algus)}–${kell(t0.lopp)}</div>
     <div class="grupid">${tunnid.map(osa).join("")}</div></div>`;
 }
 
@@ -99,7 +104,7 @@ function joonista(andmed) {
         const onSook = sook && min(eelLopp) < min(sook.lopp) && min(algus) > min(sook.algus);
         html += onSook
           ? `<div class="vahe sook">🍽️ Söögivahetund ${kell(sook.algus)}–${kell(sook.lopp)}</div>`
-          : `<div class="vahe">🤸 Vahetund ${kell(eelLopp)}–${kell(algus)}</div>`;
+          : `<div class="vahe" style="${seade("Vahetund").varv ? `background:${seade("Vahetund").varv};border:none` : ""}">${esc(seade("Vahetund").emoji || "🤸")} Vahetund ${kell(eelLopp)}–${kell(algus)}</div>`;
       }
     }
     html += tunniKaart(plokk);

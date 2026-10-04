@@ -140,14 +140,14 @@ function joonista(andmed) {
   sisu.innerHTML = html;
 }
 
-// Lendavad põrsad taustal
+// Lendavad õpikud taustal
 for (let i = 0; i < 8; i++) {
   const p = document.createElement("div");
   p.className = "porsas";
   p.style.top = `${5 + i * 12}%`;
   p.style.animationDuration = `${14 + (i * 7) % 12}s`;
   p.style.animationDelay = `-${(i * 5) % 14}s`;
-  p.innerHTML = "<span>🪽🐷</span>";
+  p.innerHTML = `<span>${["📕", "📗", "📘", "📙"][i % 4]}</span>`;
   document.getElementById("porsad").appendChild(p);
 }
 

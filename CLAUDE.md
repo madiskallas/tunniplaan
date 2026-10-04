@@ -10,20 +10,23 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 
 ## Tehnika (ära muuda ilma küsimata)
 - Kogu äpp on **üks fail `index.html`** (HTML + CSS + JavaScript ühes failis). Ei mingit build'i, npm'i ega väliseid teeke.
-- Andmed on failis `andmed.js` (`window.TUNNIPLAAN`), mida laeb `<script src="andmed.js">`. Ära muuda seda faili käsitsi; uuendamiseks `python3 tools/uuenda_andmed.py`.
-- `andmed.js` struktuur: `paevad[0..4]` = esmaspäev..reede, igal päeval `tunnid[]` väljadega `tund, pikkus, algus, lopp, aine, lyhend, opetajad[], ruum, grupp`. Kui `grupp` on `"Grupp 1"`/`"Grupp 2"`, käib tund pool klassi kaupa ja samal ajal on teine tund teisele grupile — näita neid kõrvuti/koos, mitte eraldi tundidena.
-- Ära kustuta faili `CNAME` (selle kaudu töötab aadress tunniplaan.orkestraator.ee).
+- Andmed on failis `andmed.js` (`window.TUNNIPLAAN`), mida laeb `<script src="andmed.js">`. **Ära muuda seda faili käsitsi.** GitHub Actions (`.github/workflows/avalda.yml`) uuendab seda iga 30 minuti tagant EduPage'ist, nii et ametliku tunniplaani muudatused jõuavad äppi ise. Käsitsi uuendamiseks: `python3 tools/uuenda_andmed.py`.
+- `andmed.js` on **kuupäevapõhine**: `paevad[]` = kõik tööpäevad vahemikus `alates`..`kuni` (jooksev nädal + 2 järgmist). Igal päeval on `kuupaev` (`"2026-10-05"`), `nimi` (`"Esmaspäev"`) ja `tunnid[]` väljadega `tund, pikkus, algus, lopp, aine, lyhend, opetajad[], ruum, grupp`. Päeva leia **kuupäeva järgi**, mitte nädalapäeva järgi.
+- Kui `grupp` on `"Grupp 1"`/`"Grupp 2"`, käib tund pool klassi kaupa ja samal ajal on teine tund teisele grupile. Näita neid kõrvuti/koos, mitte eraldi tundidena.
+- Ära kustuta faili `CNAME` ega kausta `.github`.
 - Äpp peab töötama eelkõige **telefonis** (kitsas ekraan, suur kiri, vajutatav pöidlaga).
 
 ## Mis päeva näidata (põhireegel)
 - Kasuta Eesti aega (`Europe/Tallinn`).
 - Näita **tänast** päeva, kuni **1 tund pärast tänase viimase tunni lõppu**.
-- Pärast seda näita **järgmise koolipäeva** tunniplaani. Reede õhtul, laupäeval ja pühapäeval on järgmine koolipäev esmaspäev.
+- Pärast seda näita **järgmise koolipäeva** tunniplaani = järgmine kuupäev andmetes, millel on tunde. (Reede õhtul, laupäeval ja pühapäeval on see tavaliselt esmaspäev.)
+- Kui sobivat päeva andmetes ei ole (andmed on vanad), näita sõbralikku teadet ja linki kooli tunniplaanile (`allikas`). Ära kunagi näita vale päeva tunde.
 - **Päeva nimi** (nt "Esmaspäev" ja kuupäev) peab olema suur ja selgelt näha.
 - Kui näidatakse järgmist päeva, siis peab üleval olema **selgelt nähtav teade** (nt "Tänased tunnid on läbi! Näitan homset.").
 - Testimiseks: URL-i parameeter `?aeg=2026-10-09T17:00` paneb äpi arvama, et kell on just see. See peab alati töötama, sest näitame seda lastele.
 
 ## Avaldamine
-- Kood läheb veebi `git push`-iga harusse `main` → GitHub Pages → https://tunniplaan.orkestraator.ee (umbes 1 minut).
+- Kood läheb veebi `git push`-iga harusse `main` → GitHub Actions „Avalda“ → https://tunniplaan.orkestraator.ee (umbes 1 minut).
+- **Enne push'i tee alati `git pull --rebase`**, sest robot võib vahepeal andmeid uuendanud olla.
 - Commit'i sõnum kirjuta eesti keeles ja lühidalt (nt "Lisasime ainete emojid").
 - Kohalikuks vaatamiseks: `python3 -m http.server 8000` ja ava http://localhost:8000

@@ -1,0 +1,55 @@
+# Paneb äpi veebi (GitHub Pages) ja hoiab tunniplaani andmed EduPage'iga kooskõlas.
+#  - iga push harusse main -> kohe veebi
+#  - iga 30 min (päeval) -> laeb EduPage'ist värsked andmed; kui midagi muutus, salvestab ja paneb veebi
+#  - käsitsi: Actions -> "Avalda" -> Run workflow
+name: Avalda
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "7,37 3-18 * * *"   # UTC, ehk u 6–21 Eesti aja järgi
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: avalda
+  cancel-in-progress: false
+
+jobs:
+  avalda:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Uuenda tunniplaani andmed EduPage'ist
+        id: andmed
+        if: github.event_name != 'push'
+        run: |
+          python3 tools/uuenda_andmed.py
+          if git diff --quiet andmed.js; then
+            echo "muutus=false" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "Tunniplaani andmed uuendatud EduPage'ist"
+            git push
+            echo "muutus=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: github.event_name == 'push' || steps.andmed.outputs.muutus == 'true'
+        uses: actions/configure-pages@v5
+      - if: github.event_name == 'push' || steps.andmed.outputs.muutus == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+      - if: github.event_name == 'push' || steps.andmed.outputs.muutus == 'true'
+        id: deploy
+        uses: actions/deploy-pages@v4

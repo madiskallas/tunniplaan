@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
-"""Laeb Haabneeme Kooli EduPage'ist klassi tunniplaani ja kirjutab selle faili andmed.js.
+"""Laeb Haabneeme Kooli EduPage'ist klassi tunniplaani kuupäevade kaupa ja kirjutab selle faili andmed.js.
 
 Kasutamine:  python3 tools/uuenda_andmed.py [KLASS]     (vaikimisi 4B)
 
 EduPage ei luba brauseril andmeid otse teiselt aadressilt lugeda (CORS),
-seepärast hoiame tunniplaani koopiat siinsamas repos.
+seepärast käivitab GitHub Actions selle skripti regulaarselt
+(.github/workflows/uuenda-andmed.yml) ja paneb värske koopia reposse.
+
+Andmed on kuupäevapõhised: kui kool avaldab EduPage'is uue tunniplaani
+versiooni, tulevad muudatused järgmise uuendusega kaasa.
 """
 import json
 import re
 import sys
 import urllib.request
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 KOOL = "https://haabneeme.edupage.org"
 KLASS = sys.argv[1] if len(sys.argv) > 1 else "4B"
 VALJUND = Path(__file__).resolve().parent.parent / "andmed.js"
+NADALAID = 3  # mitu nädalat ette (jooksev nädal kaasa arvatud)
 
-PAEVAD = ["Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede"]
+PAEVAD = ["Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev", "Pühapäev"]
 
 # EduPage'i lühendid -> ainete nimed, mida laps ära tunneb
 AINED = {
@@ -47,66 +53,87 @@ def edupage(func, args):
         return json.load(r)["r"]
 
 
+def aine_nimi(lyhend, taisnimi):
+    alus = re.sub(r" [LP]$", "", lyhend)
+    return AINED.get(lyhend) or AINED.get(alus) or re.sub(r" [LP]$", "", taisnimi)
+
+
 def main():
-    aasta = date.today().year if date.today().month >= 8 else date.today().year - 1
+    tana = datetime.now(ZoneInfo("Europe/Tallinn")).date()
+    aasta = tana.year if tana.month >= 8 else tana.year - 1
+    algus = tana - timedelta(days=tana.weekday())  # jooksva nädala esmaspäev
+    lopp = algus + timedelta(weeks=NADALAID, days=-1)
+
+    # Nimed (ained, õpetajad, ruumid) tulevad kehtivast põhitunniplaanist
     tt_num = edupage("ttviewer.js?__func=getTTViewerData", [None, aasta])["regular"]["default_num"]
     tabelid = edupage("regulartt.js?__func=regularttGetData", [None, tt_num])["dbiAccessorRes"]["tables"]
     T = {t["id"]: {r["id"]: r for r in t.get("data_rows", [])} for t in tabelid}
-
     klass = next(c for c in T["classes"].values() if c["name"] == KLASS)
-    ajad = {p["period"]: (p["starttime"], p["endtime"]) for p in T["periods"].values()}
 
-    paevad = [{"nimi": n, "tunnid": []} for n in PAEVAD]
-    for kaart in T["cards"].values():
-        tund = T["lessons"][kaart["lessonid"]]
-        if klass["id"] not in tund["classids"] or "1" not in kaart["days"]:
+    # Tunnid ise tulevad kuupäevade kaupa (arvestab tunniplaani muudatustega)
+    kaardid = edupage("currenttt.js?__func=curentttGetData", [None, {
+        "year": aasta, "datefrom": algus.isoformat(), "dateto": lopp.isoformat(),
+        "table": "classes", "id": klass["id"], "showColors": True,
+        "showIgroupsInClasses": False, "showOrig": True, "log_module": "CurrentTTView",
+    }])["ttitems"]
+
+    paevad = {}
+    p = algus
+    while p <= lopp:
+        if p.weekday() < 5:
+            paevad[p.isoformat()] = {"kuupaev": p.isoformat(), "nimi": PAEVAD[p.weekday()], "tunnid": []}
+        p += timedelta(days=1)
+
+    for k in kaardid:
+        if k.get("type") != "card" or k["date"] not in paevad:
             continue
-        aine = T["subjects"][tund["subjectid"]]
+        aine = T["subjects"].get(k["subjectid"], {"short": "?", "name": "?"})
         lyhend = aine["short"]
-        nr = int(kaart["period"])
-        pikkus = int(tund["durationperiods"])
-        algus, lopp = ajad[str(nr)][0], ajad[str(nr + pikkus - 1)][1]
+        tund_algus, tund_lopp = k["starttime"], k["endtime"]
 
         # "Uj 12.30-13.15" -> ujumine toimub tegelikult teisel ajal kui tunnikell
         aeg = re.search(r"(\d{1,2})\.(\d{2})-(\d{1,2})\.(\d{2})", lyhend)
         if aeg:
-            algus = f"{int(aeg[1]):02}:{aeg[2]}"
-            lopp = f"{int(aeg[3]):02}:{aeg[4]}"
+            tund_algus, tund_lopp = f"{int(aeg[1]):02}:{aeg[2]}", f"{int(aeg[3]):02}:{aeg[4]}"
             nimi = "Ujumine"
         else:
-            alus = re.sub(r" [LP]$", "", lyhend)
-            nimi = AINED.get(lyhend) or AINED.get(alus) or re.sub(r" [LP]$", "", aine["name"])
+            nimi = aine_nimi(lyhend, aine["name"])
 
-        grupid = {T["groups"][g]["name"] for g in tund["groupids"]} - {"Terve klass"}
-        paevad[kaart["days"].index("1")]["tunnid"].append({
-            "tund": nr,
-            "pikkus": pikkus,
-            "algus": algus,
-            "lopp": lopp,
+        grupp = next((g for g in k.get("groupnames", []) if g), None)
+        paevad[k["date"]]["tunnid"].append({
+            "tund": int(k["uniperiod"]),
+            "pikkus": int(k.get("durationperiods") or 1),
+            "algus": tund_algus,
+            "lopp": tund_lopp,
             "aine": nimi,
             "lyhend": lyhend,
-            "opetajad": [T["teachers"][t]["short"] for t in tund["teacherids"]],
-            "ruum": ", ".join(T["classrooms"][r]["short"] for r in kaart["classroomids"] if r in T["classrooms"]),
-            "grupp": sorted(grupid)[0].replace("Group", "Grupp") if grupid else None,
+            "opetajad": [T["teachers"][t]["short"] for t in k["teacherids"] if t in T["teachers"]],
+            "ruum": ", ".join(T["classrooms"][r]["short"] for r in k["classroomids"] if r in T["classrooms"]),
+            "grupp": grupp.replace("Group", "Grupp") if grupp else None,
         })
 
-    for p in paevad:
-        p["tunnid"].sort(key=lambda t: (t["tund"], t["grupp"] or ""))
+    for p in paevad.values():
+        p["tunnid"].sort(key=lambda t: (t["algus"], t["grupp"] or ""))
 
     andmed = {
         "kool": "Haabneeme Kool",
         "klass": KLASS,
         "allikas": f"{KOOL}/timetable/",
-        "uuendatud": date.today().isoformat(),
-        "tunnikell": [{"tund": int(k), "algus": a, "lopp": l} for k, (a, l) in sorted(ajad.items(), key=lambda x: int(x[0]))],
-        "paevad": paevad,
+        "alates": algus.isoformat(),
+        "kuni": lopp.isoformat(),
+        "paevad": list(paevad.values()),
     }
+    if not any(p["tunnid"] for p in andmed["paevad"]):
+        sys.exit("EduPage'ist ei tulnud ühtegi tundi, jätan vanad andmed alles.")
+
     VALJUND.write_text(
-        "// Tunniplaani andmed. Uuendamiseks: python3 tools/uuenda_andmed.py\n"
+        "// Tunniplaani andmed EduPage'ist. Uueneb automaatselt (GitHub Actions).\n"
+        "// Käsitsi uuendamiseks: python3 tools/uuenda_andmed.py\n"
         "window.TUNNIPLAAN = " + json.dumps(andmed, ensure_ascii=False, indent=2) + ";\n",
         encoding="utf-8",
     )
-    print(f"{KLASS}: {sum(len(p['tunnid']) for p in paevad)} tundi -> {VALJUND}")
+    tunde = sum(len(p["tunnid"]) for p in andmed["paevad"])
+    print(f"{KLASS}: {algus}..{lopp}, {tunde} tundi -> {VALJUND}")
 
 
 if __name__ == "__main__":

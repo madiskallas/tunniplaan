@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Seaded – 4B tunniplaan</title>
+<style>
+  :root { --taust: #fdf6e3; --kaart: #ffffff; --tekst: #1d2433; --nõrk: #6b7280; --raam: #e5e7eb; --aktsent: #1f6fb2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--taust); color: var(--tekst); font-family: system-ui, -apple-system, sans-serif; padding: 16px 16px 110px; }
+  h1 { margin: 0 0 4px; font-size: clamp(1.4rem, 2.4vw, 2.2rem); text-align: center; }
+  .juhis { text-align: center; color: var(--nõrk); margin: 0 0 14px; font-size: clamp(.95rem, 1.2vw, 1.15rem); }
+  .ruudustik { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; max-width: 1800px; margin: 0 auto; }
+  .kaart { background: var(--kaart); border-radius: 14px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,.07); border-left: 12px solid var(--raam); transition: border-color .15s; }
+  .pealkiri { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .nr { background: var(--tekst); color: #fff; border-radius: 50%; min-width: 26px; height: 26px; display: inline-grid; place-items: center; font-size: .85rem; font-weight: 700; }
+  .nimi { font-weight: 700; font-size: 1.15rem; flex: 1; }
+  .valitud { font-size: 1.8rem; min-width: 2.2rem; text-align: center; }
+  .rida { display: flex; align-items: center; gap: 6px; }
+  .emojid { display: flex; gap: 4px; flex: 1; }
+  .emojid label { position: relative; cursor: pointer; }
+  .emojid input { position: absolute; opacity: 0; pointer-events: none; }
+  .emojid span { display: grid; place-items: center; width: 54px; height: 54px; font-size: 2rem; border-radius: 12px; border: 3px solid transparent; background: #f6f7f9; }
+  .emojid span::after { content: attr(data-nr); position: absolute; bottom: -2px; right: 2px; font-size: .7rem; font-weight: 800; color: var(--nõrk); }
+  .emojid input:checked + span { border-color: var(--aktsent); background: #e8f1fb; }
+  .emojid input:checked + span::before { content: "✓"; position: absolute; top: -6px; right: -6px; background: var(--aktsent); color: #fff; border-radius: 50%; width: 20px; height: 20px; font-size: .75rem; display: grid; place-items: center; font-weight: 800; }
+  .varvinupp { width: 64px; height: 54px; border-radius: 12px; border: 3px dashed #c4c9d1; background: #fff; cursor: pointer; font-size: 1.4rem; }
+  .varvinupp.on { border: 3px solid rgba(0,0,0,.15); }
+
+  .riba { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.96); border-top: 1px solid var(--raam); padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; backdrop-filter: blur(6px); }
+  .seis { color: var(--nõrk); font-size: 1rem; }
+  .nupp { font: inherit; font-size: 1.15rem; font-weight: 700; padding: 12px 22px; border-radius: 12px; border: 0; cursor: pointer; background: var(--aktsent); color: #fff; }
+  .nupp.teine { background: #eef0f3; color: var(--tekst); }
+
+  .palett-taust { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; place-items: center; z-index: 10; padding: 16px; }
+  .palett-taust.lahti { display: grid; }
+  .palett { background: #fff; border-radius: 18px; padding: 18px; max-width: 560px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  .palett h2 { margin: 0 0 12px; font-size: 1.3rem; text-align: center; }
+  .toonid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+  .toon { border: 0; border-radius: 14px; height: 74px; cursor: pointer; font: inherit; font-weight: 700; color: #1d2433; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); }
+  .toon.valitud-toon { box-shadow: inset 0 0 0 4px #1d2433; }
+
+  .kopeeritud { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: #1d2433; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 1.1rem; display: none; z-index: 20; }
+  textarea { display: none; width: min(900px, 100%); height: 160px; margin: 10px auto 0; font: 14px/1.4 ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>⚙️ Meie valikud</h1>
+<p class="juhis">Vali igale ainele emoji ✓ ja vajuta 🎨, et valida värv. Lõpuks vajuta „Kopeeri Claude'ile“.</p>
+<div class="ruudustik" id="ruudustik"></div>
+<textarea id="varu" readonly></textarea>
+
+<div class="riba">
+  <span class="seis" id="seis"></span>
+  <button class="nupp teine" id="tyhjenda">Alusta otsast</button>
+  <button class="nupp" id="kopeeri">📋 Kopeeri Claude'ile</button>
+</div>
+
+<div class="palett-taust" id="palettTaust">
+  <div class="palett">
+    <h2 id="palettPealkiri">Vali värv</h2>
+    <div class="toonid" id="toonid"></div>
+  </div>
+</div>
+<div class="kopeeritud" id="teade">✅ Kopeeritud! Nüüd kleebi Claude'ile (Cmd+V)</div>
+
+<script>
+  const AINED = [
+    ["Eesti keel",           ["📖", "✏️", "📝", "🇪🇪"]],
+    ["Matemaatika",          ["🔢", "➕", "🧮", "📐"]],
+    ["Inglise keel",         ["🇬🇧", "🔤", "💬", "🌍"]],
+    ["Kehaline kasvatus",    ["⚽", "🏃", "🤸", "🏀"]],
+    ["Loodusõpetus",         ["🌿", "🦋", "🔬", "🐞"]],
+    ["Inimeseõpetus",        ["❤️", "🤝", "😊", "🧠"]],
+    ["Kunstiõpetus",         ["🎨", "🖌️", "🖍️", "🌈"]],
+    ["Muusika",              ["🎵", "🎸", "🥁", "🎹"]],
+    ["Käsitöö",              ["🧶", "🧵", "✂️", "🧸"]],
+    ["Tehnoloogiaõpetus",    ["🔨", "🔧", "🪚", "🤖"]],
+    ["Ujumine",              ["🏊", "🌊", "🐬", "🐠"]],
+    ["Tantsuline liikumine", ["💃", "🕺", "🩰", "🎶"]],
+    ["Jalgrattakoolitus",    ["🚲", "🚴", "🚦", "🦺"]],
+    ["Klassijuhatajatund",   ["🏫", "🙋", "🗓️", "👩‍🏫"]],
+    ["Mudilaskoor",          ["🎤", "🎼", "🐦", "🗣️"]],
+    ["Vahetund",             ["🍎", "🥪", "🧃", "🎉"]],
+  ];
+  const VARVID = [
+    ["punane", "#FF8A80"], ["oranž", "#FFB74D"], ["kollane", "#FFE066"], ["laimiroheline", "#C5E86C"],
+    ["roheline", "#69DB7C"], ["türkiis", "#63E6BE"], ["helesinine", "#74C0FC"], ["sinine", "#91A7FF"],
+    ["lilla", "#B197FC"], ["roosa", "#F7A1C4"], ["virsik", "#FFC9A8"], ["liivakarva", "#E6C79C"],
+    ["hall", "#CED4DA"], ["valge", "#F8F9FA"],
+  ];
+  const VOTI = "tunniplaan-setup";
+
+  let valik = {};
+  try { valik = JSON.parse(localStorage.getItem(VOTI)) || {}; } catch (e) {}
+  const salvesta = () => { try { localStorage.setItem(VOTI, JSON.stringify(valik)); } catch (e) {} };
+
+  const ruudustik = document.getElementById("ruudustik");
+  ruudustik.innerHTML = AINED.map(([aine, emojid], i) => `
+    <div class="kaart" data-aine="${aine}">
+      <div class="pealkiri"><span class="nr">${i + 1}</span><span class="nimi">${aine}</span><span class="valitud"></span></div>
+      <div class="rida">
+        <div class="emojid">${emojid.map((e, j) => `
+          <label><input type="radio" name="e${i}" value="${e}"><span data-nr="${j + 1}">${e}</span></label>`).join("")}
+        </div>
+        <button class="varvinupp" title="Vali värv">🎨</button>
+      </div>
+    </div>`).join("");
+
+  function joonista() {
+    let emojisid = 0, varve = 0;
+    for (const kaart of ruudustik.children) {
+      const v = valik[kaart.dataset.aine] || {};
+      kaart.querySelectorAll("input").forEach((inp) => (inp.checked = inp.value === v.emoji));
+      kaart.querySelector(".valitud").textContent = v.emoji || "";
+      const nupp = kaart.querySelector(".varvinupp");
+      const varv = VARVID.find(([n]) => n === v.varv);
+      kaart.style.borderLeftColor = varv ? varv[1] : "";
+      nupp.style.background = varv ? varv[1] : "";
+      nupp.classList.toggle("on", !!varv);
+      nupp.textContent = varv ? "" : "🎨";
+      if (v.emoji) emojisid++;
+      if (varv) varve++;
+    }
+    document.getElementById("seis").textContent = `Valitud: ${emojisid}/${AINED.length} emojit · ${varve}/${AINED.length} värvi`;
+  }
+
+  ruudustik.addEventListener("change", (e) => {
+    const aine = e.target.closest(".kaart").dataset.aine;
+    valik[aine] = { ...valik[aine], emoji: e.target.value };
+    salvesta(); joonista();
+  });
+
+  // Värvipalett
+  const taust = document.getElementById("palettTaust");
+  let avatudAine = null;
+  ruudustik.addEventListener("click", (e) => {
+    const nupp = e.target.closest(".varvinupp");
+    if (!nupp) return;
+    avatudAine = nupp.closest(".kaart").dataset.aine;
+    document.getElementById("palettPealkiri").textContent = `Mis värvi on ${avatudAine}?`;
+    const praegune = (valik[avatudAine] || {}).varv;
+    document.getElementById("toonid").innerHTML = VARVID.map(([n, hex]) =>
+      `<button class="toon${n === praegune ? " valitud-toon" : ""}" data-varv="${n}" style="background:${hex}">${n}</button>`).join("");
+    taust.classList.add("lahti");
+  });
+  taust.addEventListener("click", (e) => {
+    const toon = e.target.closest(".toon");
+    if (toon) {
+      valik[avatudAine] = { ...valik[avatudAine], varv: toon.dataset.varv };
+      salvesta(); joonista();
+    }
+    if (toon || e.target === taust) taust.classList.remove("lahti");
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") taust.classList.remove("lahti"); });
+
+  // Claude'ile kopeeritav tekst
+  function tekst() {
+    const read = AINED.map(([aine]) => {
+      const v = valik[aine] || {};
+      const varv = VARVID.find(([n]) => n === v.varv);
+      const osad = [];
+      if (v.emoji) osad.push(`emoji ${v.emoji}`);
+      if (varv) osad.push(`värv ${varv[0]} ${varv[1]}`);
+      return osad.length ? `- ${aine}: ${osad.join(", ")}` : null;
+    }).filter(Boolean);
+    return "Lapsed valisid /setup lehel:\n" + (read.length ? read.join("\n") : "(veel midagi pole valitud)") +
+      "\nPane need valikud äppi (salvesta faili seaded.js) ja pane veebi.";
+  }
+  document.getElementById("kopeeri").addEventListener("click", async () => {
+    const t = tekst();
+    const varu = document.getElementById("varu");
+    try {
+      await navigator.clipboard.writeText(t);
+      const teade = document.getElementById("teade");
+      teade.style.display = "block";
+      setTimeout(() => (teade.style.display = "none"), 2500);
+      varu.style.display = "none";
+    } catch (e) {
+      varu.value = t; varu.style.display = "block"; varu.select();
+    }
+  });
+  document.getElementById("tyhjenda").addEventListener("click", () => {
+    if (!Object.keys(valik).length) return;
+    valik = {}; salvesta(); joonista();
+  });
+
+  joonista();
+</script>
+</body>
+</html>

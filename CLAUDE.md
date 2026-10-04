@@ -15,10 +15,8 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 - Kui `grupp` on `"Grupp 1"`/`"Grupp 2"`, käib tund pool klassi kaupa ja samal ajal on teine tund teisele grupile. Näita neid kõrvuti/koos, mitte eraldi tundidena.
 - Äpp peab töötama eelkõige **telefonis** (kitsas ekraan, suur kiri, vajutatav pöidlaga).
 
-## Seadete leht /setup (ainult ehitamise ajaks)
-- Mall on failis `/Users/madis.kallas/dev/tunniplaan-tund/setup.html`. Seal valivad lapsed igale ainele emoji ja värvi.
-- **„Lülita /setup sisse“** → kopeeri mall **muutmata kujul** faili `setup/index.html` ja pane veebi (siis töötab https://tunniplaan.orkestraator.ee/setup).
-- **„Lülita /setup välja“** → kustuta kaust `setup/` ja pane veebi.
+## Seadete leht /setup
+- `setup/index.html` → https://tunniplaan.orkestraator.ee/setup. Seal valivad lapsed igale ainele emoji ja värvi. Leht ei salvesta midagi serverisse, vaid teeb ainult Claude'ile kleebitava teksti. **Ära muuda seda lehte ilma küsimata.**
 - Sulle kleebitakse tekst, mis algab „Lapsed valisid /setup lehel:“. Salvesta valikud faili `seaded.js` kujul `window.SEADED = { "Matemaatika": { emoji: "🧮", varv: "#74C0FC" }, ... }`, lae see `index.html`-is (`<script src="seaded.js">`) ja kasuta äpis: emoji aine nime ees, värv tunni kaardi taustaks. „Vahetund“ emoji ja värv käivad vahetundide juurde. Kui mõnel ainel valikut pole, kasuta neutraalset kujundust. Iga uus kleebitud tekst asendab eelmised valikud.
 
 ## Mis päeva näidata (põhireegel)

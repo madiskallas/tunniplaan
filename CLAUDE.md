@@ -25,6 +25,7 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 - Testimiseks: URL-i parameeter `?aeg=2026-10-09T17:00` paneb äpi arvama, et kell on just see. See peab alati töötama, sest näitame seda lastele.
 
 ## Avaldamine
+- **Pärast iga valmis muudatust pane see kohe veebi** (commit + push), ka siis, kui seda eraldi ei öeldud. Lapsed jälgivad muudatusi telefonist. Ütle siis lühidalt, et umbes minuti pärast on see telefonis näha.
 - Kood läheb veebi `git push`-iga harusse `main` → Cloudflare Pages → https://tunniplaan.orkestraator.ee (umbes 1 minut).
 - Commit'i sõnum kirjuta eesti keeles ja lühidalt (nt "Lisasime ainete emojid").
 - Kohalikuks vaatamiseks: `python3 -m http.server 8000` ja ava http://localhost:8000

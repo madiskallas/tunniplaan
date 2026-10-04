@@ -35,11 +35,14 @@
 
   .palett-taust { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; place-items: center; z-index: 10; padding: 16px; }
   .palett-taust.lahti { display: grid; }
-  .palett { background: #fff; border-radius: 18px; padding: 18px; max-width: 560px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  .palett { background: #fff; border-radius: 18px; padding: 18px; max-width: 820px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
   .palett h2 { margin: 0 0 12px; font-size: 1.3rem; text-align: center; }
-  .toonid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-  .toon { border: 0; border-radius: 14px; height: 74px; cursor: pointer; font: inherit; font-weight: 700; color: #1d2433; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); }
+  .toonid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 10px; }
+  .toon { position: relative; border: 0; border-radius: 14px; height: 74px; cursor: pointer; font: inherit; font-weight: 700; color: #1d2433; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 4px 8px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); }
   .toon.valitud-toon { box-shadow: inset 0 0 0 4px #1d2433; }
+  .toon:disabled { cursor: not-allowed; color: #4b5563; font-weight: 500;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.8) 0 7px, rgba(255,255,255,.45) 7px 14px); }
+  .toon .kellel { font-size: .8rem; font-weight: 800; line-height: 1.15; color: #1d2433; background: rgba(255,255,255,.85); border-radius: 6px; padding: 1px 5px; margin-top: 2px; }
 
   .kopeeritud { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: #1d2433; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 1.1rem; display: none; z-index: 20; }
   textarea { display: none; width: min(900px, 100%); height: 160px; margin: 10px auto 0; font: 14px/1.4 ui-monospace, monospace; }
@@ -84,11 +87,14 @@
     ["Mudilaskoor",          ["🎤", "🎼", "🐦", "🗣️"]],
     ["Vahetund",             ["🍎", "🥪", "🧃", "🎉"]],
   ];
+  // 24 värvi: iga toon erksana ja heledana. Üks värv = üks aine.
   const VARVID = [
-    ["punane", "#FF8A80"], ["oranž", "#FFB74D"], ["kollane", "#FFE066"], ["laimiroheline", "#C5E86C"],
-    ["roheline", "#69DB7C"], ["türkiis", "#63E6BE"], ["helesinine", "#74C0FC"], ["sinine", "#91A7FF"],
-    ["lilla", "#B197FC"], ["roosa", "#F7A1C4"], ["virsik", "#FFC9A8"], ["liivakarva", "#E6C79C"],
-    ["hall", "#CED4DA"], ["valge", "#F8F9FA"],
+    ["punane", "#FF6B6B"], ["oranž", "#FF9F43"], ["kollane", "#FFD43B"], ["laimiroheline", "#A8E05F"],
+    ["roheline", "#51CF66"], ["türkiis", "#38D9A9"], ["taevasinine", "#4DABF7"], ["sinine", "#748FFC"],
+    ["lilla", "#9775FA"], ["roosa", "#F783AC"], ["pruun", "#C08B5C"], ["hall", "#ADB5BD"],
+    ["lõheroosa", "#FFC2C2"], ["virsik", "#FFD3A8"], ["vanilje", "#FFF1A8"], ["pistaatsia", "#DDF5B8"],
+    ["heleroheline", "#B9F0C2"], ["münt", "#B2F2E0"], ["jääsinine", "#C5E4FC"], ["lavendel", "#D0D8FF"],
+    ["helelilla", "#E5DBFF"], ["suhkruvatt", "#FFD6E7"], ["liivakarva", "#EBD3B5"], ["helehall", "#E9ECEF"],
   ];
   const VOTI = "tunniplaan-setup";
 
@@ -141,12 +147,16 @@
     avatudAine = nupp.closest(".kaart").dataset.aine;
     document.getElementById("palettPealkiri").textContent = `Mis värvi on ${avatudAine}?`;
     const praegune = (valik[avatudAine] || {}).varv;
-    document.getElementById("toonid").innerHTML = VARVID.map(([n, hex]) =>
-      `<button class="toon${n === praegune ? " valitud-toon" : ""}" data-varv="${n}" style="background:${hex}">${n}</button>`).join("");
+    const kellel = {}; // värv -> aine, kellel see juba on
+    for (const [aine, v] of Object.entries(valik)) if (v.varv && aine !== avatudAine) kellel[v.varv] = aine;
+    document.getElementById("toonid").innerHTML = VARVID.map(([n, hex]) => kellel[n]
+      ? `<button class="toon" disabled style="background:${hex}">${n}<span class="kellel">🔒 ${kellel[n]}</span></button>`
+      : `<button class="toon${n === praegune ? " valitud-toon" : ""}" data-varv="${n}" style="background:${hex}">${n}</button>`).join("");
     taust.classList.add("lahti");
   });
   taust.addEventListener("click", (e) => {
-    const toon = e.target.closest(".toon");
+    const toon = e.target.closest(".toon:not(:disabled)");
+    if (e.target.closest(".toon:disabled")) return;
     if (toon) {
       valik[avatudAine] = { ...valik[avatudAine], varv: toon.dataset.varv };
       salvesta(); joonista();

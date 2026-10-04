@@ -10,10 +10,9 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 
 ## Tehnika (ära muuda ilma küsimata)
 - Kogu äpp on **üks fail `index.html`** (HTML + CSS + JavaScript ühes failis). Ei mingit build'i, npm'i ega väliseid teeke.
-- Andmete laadimine on juba valmis: lisa `index.html`-i `<script src="andmed.js"></script><script src="laadija.js"></script>` ja kasuta **`const andmed = await laeTunniplaan();`**. See võtab värsked andmed Cloudflare Workerist (`cloudflare/worker.js`, loeb otse kooli EduPage'ist) ja kui see ei õnnestu, siis koopia failist `andmed.js`. **Ära muuda faile `laadija.js`, `andmed.js` ega `cloudflare/` ilma küsimata.** Koopia uuendamiseks: `python3 tools/uuenda_andmed.py`.
+- Andmete laadimine on juba valmis: lisa `index.html`-i `<script src="andmed.js"></script><script src="laadija.js"></script>` ja kasuta **`const andmed = await laeTunniplaan();`**. See võtab värsked andmed aadressilt `/api/tunniplaan` (Cloudflare'i funktsioon `functions/api/tunniplaan.js` → `cloudflare/worker.js`, loeb otse kooli EduPage'ist) ja kui see ei õnnestu (nt kohalikus arvutis), siis koopia failist `andmed.js`. **Ära muuda faile `laadija.js`, `andmed.js`, `functions/` ega `cloudflare/` ilma küsimata.** Koopia uuendamiseks: `python3 tools/uuenda_andmed.py`.
 - `andmed.js` on **kuupäevapõhine**: `paevad[]` = kõik tööpäevad vahemikus `alates`..`kuni` (jooksev nädal + 2 järgmist). Igal päeval on `kuupaev` (`"2026-10-05"`), `nimi` (`"Esmaspäev"`) ja `tunnid[]` väljadega `tund, pikkus, algus, lopp, aine, lyhend, opetajad[], ruum, grupp`. Päeva leia **kuupäeva järgi**, mitte nädalapäeva järgi.
 - Kui `grupp` on `"Grupp 1"`/`"Grupp 2"`, käib tund pool klassi kaupa ja samal ajal on teine tund teisele grupile. Näita neid kõrvuti/koos, mitte eraldi tundidena.
-- Ära kustuta faili `CNAME` ega kausta `.github`.
 - Äpp peab töötama eelkõige **telefonis** (kitsas ekraan, suur kiri, vajutatav pöidlaga).
 
 ## Mis päeva näidata (põhireegel)
@@ -26,7 +25,6 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 - Testimiseks: URL-i parameeter `?aeg=2026-10-09T17:00` paneb äpi arvama, et kell on just see. See peab alati töötama, sest näitame seda lastele.
 
 ## Avaldamine
-- Kood läheb veebi `git push`-iga harusse `main` → GitHub Actions „Avalda“ → https://tunniplaan.orkestraator.ee (umbes 1 minut).
-- **Enne push'i tee alati `git pull --rebase`**, sest andmed võivad vahepeal uuenenud olla.
+- Kood läheb veebi `git push`-iga harusse `main` → Cloudflare Pages → https://tunniplaan.orkestraator.ee (umbes 1 minut).
 - Commit'i sõnum kirjuta eesti keeles ja lühidalt (nt "Lisasime ainete emojid").
 - Kohalikuks vaatamiseks: `python3 -m http.server 8000` ja ava http://localhost:8000

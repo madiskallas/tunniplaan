@@ -1,11 +1,11 @@
 // Laeb tunniplaani andmed.
-// 1) Proovib värskeid andmeid Cloudflare Workerist (loeb otse kooli EduPage'ist, vt cloudflare/worker.js).
+// 1) Proovib värskeid andmeid aadressilt /api/tunniplaan (loeb otse kooli EduPage'ist, vt cloudflare/worker.js).
 // 2) Kui see ei õnnesta (internet, Worker maas), kasutab repo koopiat failist andmed.js.
 //
 // Kasutamine:  const andmed = await laeTunniplaan();
 //              andmed.varske === true, kui andmed tulid otse EduPage'ist
 
-const VARSKE_ANDMED_URL = ""; // nt "https://tunniplaan.<sinu-konto>.workers.dev/"
+const VARSKE_ANDMED_URL = "/api/tunniplaan"; // Cloudflare Pages'i funktsioon (functions/api/tunniplaan.js)
 
 async function laeTunniplaan() {
   if (VARSKE_ANDMED_URL) {

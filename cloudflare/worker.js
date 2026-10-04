@@ -2,8 +2,9 @@
 // äpile JSON-ina (sama kujuga nagu andmed.js). Brauser ise EduPage'ist lugeda ei saa (CORS)
 // ja GitHubi serverid on EduPage'i poolt blokeeritud, seepärast käib lugemine siit.
 //
-// Kasutamine:  GET https://<worker>.workers.dev/            -> 4B
-//              GET https://<worker>.workers.dev/?klass=4A
+// Kasutamine:  GET https://tunniplaan.orkestraator.ee/api/tunniplaan   (Cloudflare Pages, functions/api/tunniplaan.js)
+//              GET https://tunniplaan.madiskallas.workers.dev/         (eraldi Worker)
+//              ?klass=4A  -> mõni teine klass
 // Vastus on 15 minutit vahemälus, et EduPage'i mitte koormata.
 
 const KOOL = "https://haabneeme.edupage.org";
@@ -35,30 +36,35 @@ const CORS = { "Access-Control-Allow-Origin": "*" };
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    if (request.method === "OPTIONS") return new Response(null, { headers: { ...CORS, "Access-Control-Allow-Methods": "GET" } });
-    if (url.pathname !== "/") return new Response("Ei leitud", { status: 404, headers: CORS });
-
-    const klass = (url.searchParams.get("klass") || "4B").toUpperCase();
-    const vahemaluVoti = new Request(`https://vahemalu/${klass}`);
-    const vahemalu = caches.default;
-    const vana = await vahemalu.match(vahemaluVoti);
-    if (vana) return vana;
-
-    try {
-      const andmed = await laeTunniplaan(klass);
-      const vastus = new Response(JSON.stringify(andmed), {
-        headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": `public, max-age=${VAHEMALU_SEK}` },
-      });
-      ctx.waitUntil(vahemalu.put(vahemaluVoti, vastus.clone()));
-      return vastus;
-    } catch (viga) {
-      return new Response(JSON.stringify({ viga: String(viga.message || viga) }), {
-        status: 502, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8" },
-      });
-    }
+    if (new URL(request.url).pathname !== "/") return new Response("Ei leitud", { status: 404, headers: CORS });
+    return vasta(request, ctx);
   },
 };
+
+// Vastab päringule tunniplaani JSON-iga. Kasutavad nii eraldi Worker (ülal)
+// kui ka Cloudflare Pages'i funktsioon functions/api/tunniplaan.js
+export async function vasta(request, ctx) {
+  if (request.method === "OPTIONS") return new Response(null, { headers: { ...CORS, "Access-Control-Allow-Methods": "GET" } });
+
+  const klass = (new URL(request.url).searchParams.get("klass") || "4B").toUpperCase();
+  const vahemaluVoti = new Request(`https://vahemalu/${klass}`);
+  const vahemalu = caches.default;
+  const vana = await vahemalu.match(vahemaluVoti);
+  if (vana) return vana;
+
+  try {
+    const andmed = await laeTunniplaan(klass);
+    const vastus = new Response(JSON.stringify(andmed), {
+      headers: { ...CORS, "Content-Type": "application/json; charset=utf-8", "Cache-Control": `public, max-age=${VAHEMALU_SEK}` },
+    });
+    ctx.waitUntil(vahemalu.put(vahemaluVoti, vastus.clone()));
+    return vastus;
+  } catch (viga) {
+    return new Response(JSON.stringify({ viga: String(viga.message || viga) }), {
+      status: 502, headers: { ...CORS, "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+}
 
 async function edupage(func, args) {
   const r = await fetch(`${KOOL}/timetable/server/${func}`, {

@@ -7,6 +7,13 @@
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, sans-serif; background: #eef3f8; color: #1d2733; }
+  #porsad { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .porsas { position: absolute; left: -80px; font-size: 2.6rem; opacity: .35; animation: lenda linear infinite; }
+  .porsas span { display: inline-block; animation: vehi 1.2s ease-in-out infinite alternate; }
+  @keyframes lenda { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 160px)); } }
+  @keyframes vehi { from { transform: translateY(-10px) rotate(-6deg); } to { transform: translateY(10px) rotate(6deg); } }
+  @media (prefers-reduced-motion: reduce) { .porsas, .porsas span { animation: none; } }
+  main { position: relative; z-index: 1; }
   main { max-width: 560px; margin: 0 auto; padding: 16px; }
   .loendur { background: #1d2733; color: #fff; border-radius: 18px; padding: 16px; text-align: center;
              font-size: 1.4rem; font-weight: 700; margin-bottom: 14px; }
@@ -37,6 +44,7 @@
 </style>
 </head>
 <body>
+<div id="porsad"></div>
 <main id="sisu"><p class="kuupaev">Laen tunniplaani…</p></main>
 <script src="andmed.js"></script>
 <script src="laadija.js"></script>
@@ -130,6 +138,17 @@ function joonista(andmed) {
     html += tunniKaart(plokk, kaib);
   });
   sisu.innerHTML = html;
+}
+
+// Lendavad põrsad taustal
+for (let i = 0; i < 8; i++) {
+  const p = document.createElement("div");
+  p.className = "porsas";
+  p.style.top = `${5 + i * 12}%`;
+  p.style.animationDuration = `${14 + (i * 7) % 12}s`;
+  p.style.animationDelay = `-${(i * 5) % 14}s`;
+  p.innerHTML = "<span>🪽🐷</span>";
+  document.getElementById("porsad").appendChild(p);
 }
 
 (async () => {

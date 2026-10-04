@@ -1,14 +1,13 @@
 # Paneb äpi veebi (GitHub Pages) ja hoiab tunniplaani andmed EduPage'iga kooskõlas.
 #  - iga push harusse main -> kohe veebi
-#  - iga 30 min (päeval) -> laeb EduPage'ist värsked andmed; kui midagi muutus, salvestab ja paneb veebi
-#  - käsitsi: Actions -> "Avalda" -> Run workflow
+#  - käsitsi: Actions -> "Avalda" -> Run workflow (proovib ka EduPage'ist andmeid uuendada)
+# NB! haabneeme.edupage.org blokeerib GitHubi servereid, seepärast ajastatud uuendus on välja lülitatud
+# ja andmeid uuendatakse mujalt (vt tools/uuenda_andmed.py).
 name: Avalda
 
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: "7,37 3-18 * * *"   # UTC, ehk u 6–21 Eesti aja järgi
   workflow_dispatch:
 
 permissions:

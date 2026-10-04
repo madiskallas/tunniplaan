@@ -10,7 +10,7 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 
 ## Tehnika (ära muuda ilma küsimata)
 - Kogu äpp on **üks fail `index.html`** (HTML + CSS + JavaScript ühes failis). Ei mingit build'i, npm'i ega väliseid teeke.
-- Andmed on failis `andmed.js` (`window.TUNNIPLAAN`), mida laeb `<script src="andmed.js">`. **Ära muuda seda faili käsitsi.** GitHub Actions (`.github/workflows/avalda.yml`) uuendab seda iga 30 minuti tagant EduPage'ist, nii et ametliku tunniplaani muudatused jõuavad äppi ise. Käsitsi uuendamiseks: `python3 tools/uuenda_andmed.py`.
+- Andmed on failis `andmed.js` (`window.TUNNIPLAAN`), mida laeb `<script src="andmed.js">`. **Ära muuda seda faili käsitsi.** Uuendamiseks: `python3 tools/uuenda_andmed.py` (laeb EduPage'ist värsked andmed).
 - `andmed.js` on **kuupäevapõhine**: `paevad[]` = kõik tööpäevad vahemikus `alates`..`kuni` (jooksev nädal + 2 järgmist). Igal päeval on `kuupaev` (`"2026-10-05"`), `nimi` (`"Esmaspäev"`) ja `tunnid[]` väljadega `tund, pikkus, algus, lopp, aine, lyhend, opetajad[], ruum, grupp`. Päeva leia **kuupäeva järgi**, mitte nädalapäeva järgi.
 - Kui `grupp` on `"Grupp 1"`/`"Grupp 2"`, käib tund pool klassi kaupa ja samal ajal on teine tund teisele grupile. Näita neid kõrvuti/koos, mitte eraldi tundidena.
 - Ära kustuta faili `CNAME` ega kausta `.github`.
@@ -27,6 +27,6 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 
 ## Avaldamine
 - Kood läheb veebi `git push`-iga harusse `main` → GitHub Actions „Avalda“ → https://tunniplaan.orkestraator.ee (umbes 1 minut).
-- **Enne push'i tee alati `git pull --rebase`**, sest robot võib vahepeal andmeid uuendanud olla.
+- **Enne push'i tee alati `git pull --rebase`**, sest andmed võivad vahepeal uuenenud olla.
 - Commit'i sõnum kirjuta eesti keeles ja lühidalt (nt "Lisasime ainete emojid").
 - Kohalikuks vaatamiseks: `python3 -m http.server 8000` ja ava http://localhost:8000

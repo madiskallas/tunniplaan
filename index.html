@@ -12,6 +12,11 @@
            text-align: center; margin-bottom: 14px; }
   h1 { font-size: 2.6rem; margin: 4px 0 0; text-align: center; }
   .kuupaev { font-size: 1.4rem; text-align: center; color: #4a5a6b; margin-bottom: 18px; }
+  .tund.praegu { padding: 20px; margin: 16px -6px; outline: 5px solid #1d2733; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  .tund.praegu .aine { font-size: 2.1rem; }
+  .tund.praegu .aeg, .tund.praegu .info { font-size: 1.35rem; }
+  .silt { display: inline-block; background: #1d2733; color: #fff; font-weight: 800; border-radius: 999px;
+          padding: 4px 12px; margin-bottom: 6px; font-size: 1.05rem; }
   .tund { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
           box-shadow: 0 2px 6px rgba(0,0,0,.08); }
   .aeg { font-size: 1.15rem; font-weight: 700; color: #1d2733; }
@@ -61,7 +66,7 @@ function valiPaev(andmed, nyyd) {
   return jargmine ? { paev: jargmine, jargmine: true, olitana: !!tana } : null;
 }
 
-function tunniKaart(tunnid) {
+function tunniKaart(tunnid, onPraegu) {
   const t0 = tunnid[0];
   const yksVarv = tunnid.every((t) => seade(t.aine).varv === seade(t0.aine).varv);
   const osa = (t) => `<div class="${tunnid.length > 1 && !yksVarv ? "osa" : ""}" style="${!yksVarv && seade(t.aine).varv ? `background:${seade(t.aine).varv}` : ""}">
@@ -70,13 +75,14 @@ function tunniKaart(tunnid) {
       <div class="info">👩‍🏫 ${esc(t.opetajad.join(", ") || "—")}</div>
       <div class="info">🚪 ${esc(t.ruum || "—")}</div>
     </div>`;
-  return `<div class="tund" style="${yksVarv && seade(t0.aine).varv ? `background:${seade(t0.aine).varv}` : ""}"><div class="aeg">🕘 ${kell(t0.algus)}–${kell(t0.lopp)}</div>
+  return `<div class="tund${onPraegu ? " praegu" : ""}" style="${yksVarv && seade(t0.aine).varv ? `background:${seade(t0.aine).varv}` : ""}">${onPraegu ? `<div class="silt">⭐ PRAEGU</div>` : ""}<div class="aeg">🕘 ${kell(t0.algus)}–${kell(t0.lopp)}</div>
     <div class="grupid">${tunnid.map(osa).join("")}</div></div>`;
 }
 
 function joonista(andmed) {
   const sisu = document.getElementById("sisu");
-  const valik = valiPaev(andmed, praegu());
+  const nyyd = praegu();
+  const valik = valiPaev(andmed, nyyd);
   if (!valik) {
     sisu.innerHTML = `<div class="teade">😕 Mul pole praegu õiget tunniplaani.</div>
       <p class="kuupaev">Vaata kooli tunniplaani: <a href="${esc(andmed.allikas)}">EduPage</a></p>`;
@@ -107,7 +113,8 @@ function joonista(andmed) {
           : `<div class="vahe" style="${seade("Vahetund").varv ? `background:${seade("Vahetund").varv};border:none` : ""}">${esc(seade("Vahetund").emoji || "🤸")} Vahetund ${kell(eelLopp)}–${kell(algus)}</div>`;
       }
     }
-    html += tunniKaart(plokk);
+    const kaib = !valik.jargmine && nyyd.minut >= min(plokk[0].algus) && nyyd.minut < min(plokk[0].lopp);
+    html += tunniKaart(plokk, kaib);
   });
   sisu.innerHTML = html;
 }

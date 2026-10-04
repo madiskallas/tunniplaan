@@ -27,6 +27,7 @@ Ehitame seda äppi **otse klassi ees koos 4B klassi lastega** (10-aastased, 20 l
 - Kui sobivat päeva andmetes ei ole (andmed on vanad), näita sõbralikku teadet ja linki kooli tunniplaanile (`allikas`). Ära kunagi näita vale päeva tunde.
 - **Päeva nimi** (nt "Esmaspäev" ja kuupäev) peab olema suur ja selgelt näha.
 - Kui näidatakse järgmist päeva, siis peab üleval olema **selgelt nähtav teade** (nt "Tänased tunnid on läbi! Näitan homset.").
+- **Paaristunnid ja vahetunnid:** tunnid käivad paaridena (nt 9.00–9.40 + 9.45–10.25). **Kuni 5-minutiline vahe tundide vahel EI OLE vahetund**, ära seda näita. Vahetundi näita ainult siis, kui vahe on **üle 5 minuti** (nt 10:25–10:50, 12:15–12:40). Sama aine järjestikused tunnid on andmetes juba üheks paaristunniks liidetud (`pikkus: 2`).
 - **Söögivahetund peab olema tunniplaanis eraldi märgitud.** Vahetund, mis kattub ajaga `andmed.soogivahetund`, näita selgelt teistsugusena kui tavalised vahetunnid, nt „🍽️ Söögivahetund 10:25–10:50“ (oma emoji ja värviga). Kui `soogivahetund` on `null`, näita kõiki vahetunde tavalistena.
 - Testimiseks: URL-i parameeter `?aeg=2026-10-09T17:00` paneb äpi arvama, et kell on just see. See peab alati töötama, sest näitame seda lastele.
 

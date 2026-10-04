@@ -11,7 +11,7 @@ const KOOL = "https://haabneeme.edupage.org";
 const TOITLUSTAMINE = "https://haabneeme.edu.ee/muu-info/toitlustamine/";
 const NADALAID = 3; // mitu nädalat ette (jooksev nädal kaasa arvatud)
 const VAHEMALU_SEK = 15 * 60;
-const ANDMETE_VERSIOON = 2; // suurenda, kui vastuse kuju muutub (siis ei anta vana vahemälu)
+const ANDMETE_VERSIOON = 3; // suurenda, kui vastuse kuju muutub (siis ei anta vana vahemälu)
 
 const PAEVAD = ["Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev", "Pühapäev"];
 
@@ -142,6 +142,25 @@ export function leiaSoogivahetund(leht, klassNimi) {
   return null;
 }
 
+const minutid = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+
+// Sama aine (sama grupp, ruum, õpetajad) järjest kuni 5 min vahega = üks paaristund, vahetundi vahel pole
+function liidaPaaristunnid(tunnid) {
+  const tulemus = [];
+  for (const t of tunnid) {
+    const eelmine = [...tulemus].reverse().find((e) => e.grupp === t.grupp);
+    const vahe = eelmine ? minutid(t.algus) - minutid(eelmine.lopp) : -1;
+    if (eelmine && eelmine.aine === t.aine && eelmine.ruum === t.ruum && vahe >= 0 && vahe <= 5 &&
+        [...eelmine.opetajad].sort().join() === [...t.opetajad].sort().join()) {
+      eelmine.lopp = t.lopp;
+      eelmine.pikkus += t.pikkus;
+    } else {
+      tulemus.push({ ...t });
+    }
+  }
+  return tulemus;
+}
+
 function aineNimi(lyhend, taisnimi) {
   const alus = lyhend.replace(/ [LP]$/, "");
   return AINED[lyhend] || AINED[alus] || taisnimi.replace(/ [LP]$/, "");
@@ -184,9 +203,8 @@ export function teisenda(T, kaardid, klassNimi, algus, lopp) {
     });
   }
 
-  for (const p of Object.values(paevad)) {
-    p.tunnid.sort((x, y) => x.algus.localeCompare(y.algus) || (x.grupp || "").localeCompare(y.grupp || ""));
-  }
+  const jarjesta = (x, y) => x.algus.localeCompare(y.algus) || (x.grupp || "").localeCompare(y.grupp || "");
+  for (const p of Object.values(paevad)) p.tunnid = liidaPaaristunnid(p.tunnid.sort(jarjesta)).sort(jarjesta);
 
   return {
     kool: "Haabneeme Kool",

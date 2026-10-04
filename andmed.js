@@ -18,28 +18,14 @@ window.TUNNIPLAAN = {
       "tunnid": [
         {
           "tund": 1,
-          "pikkus": 1,
+          "pikkus": 2,
           "algus": "09:00",
-          "lopp": "09:40",
+          "lopp": "10:25",
           "aine": "Kehaline kasvatus",
           "lyhend": "Kk L",
           "opetajad": [
             "Kirke Aitsen",
             "Ülari Kais"
-          ],
-          "ruum": "V6",
-          "grupp": null
-        },
-        {
-          "tund": 2,
-          "pikkus": 1,
-          "algus": "09:45",
-          "lopp": "10:25",
-          "aine": "Kehaline kasvatus",
-          "lyhend": "Kk L",
-          "opetajad": [
-            "Ülari Kais",
-            "Kirke Aitsen"
           ],
           "ruum": "V6",
           "grupp": null
@@ -392,28 +378,14 @@ window.TUNNIPLAAN = {
       "tunnid": [
         {
           "tund": 1,
-          "pikkus": 1,
+          "pikkus": 2,
           "algus": "09:00",
-          "lopp": "09:40",
+          "lopp": "10:25",
           "aine": "Kehaline kasvatus",
           "lyhend": "Kk L",
           "opetajad": [
             "Kirke Aitsen",
             "Ülari Kais"
-          ],
-          "ruum": "V6",
-          "grupp": null
-        },
-        {
-          "tund": 2,
-          "pikkus": 1,
-          "algus": "09:45",
-          "lopp": "10:25",
-          "aine": "Kehaline kasvatus",
-          "lyhend": "Kk L",
-          "opetajad": [
-            "Ülari Kais",
-            "Kirke Aitsen"
           ],
           "ruum": "V6",
           "grupp": null
@@ -766,28 +738,14 @@ window.TUNNIPLAAN = {
       "tunnid": [
         {
           "tund": 1,
-          "pikkus": 1,
+          "pikkus": 2,
           "algus": "09:00",
-          "lopp": "09:40",
+          "lopp": "10:25",
           "aine": "Kehaline kasvatus",
           "lyhend": "Kk L",
           "opetajad": [
             "Kirke Aitsen",
             "Ülari Kais"
-          ],
-          "ruum": "V6",
-          "grupp": null
-        },
-        {
-          "tund": 2,
-          "pikkus": 1,
-          "algus": "09:45",
-          "lopp": "10:25",
-          "aine": "Kehaline kasvatus",
-          "lyhend": "Kk L",
-          "opetajad": [
-            "Ülari Kais",
-            "Kirke Aitsen"
           ],
           "ruum": "V6",
           "grupp": null

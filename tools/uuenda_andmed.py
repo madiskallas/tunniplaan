@@ -76,6 +76,26 @@ def soogivahetund(klass):
     return None
 
 
+def minutid(hhmm):
+    h, m = hhmm.split(":")
+    return int(h) * 60 + int(m)
+
+
+def liida_paaristunnid(tunnid):
+    """Sama aine (sama grupp, ruum, õpetajad) järjest kuni 5 min vahega = üks paaristund, vahetundi vahel pole."""
+    tulemus = []
+    for t in tunnid:
+        eelmine = next((e for e in reversed(tulemus) if e["grupp"] == t["grupp"]), None)
+        if (eelmine and eelmine["aine"] == t["aine"] and eelmine["ruum"] == t["ruum"]
+                and sorted(eelmine["opetajad"]) == sorted(t["opetajad"])
+                and 0 <= minutid(t["algus"]) - minutid(eelmine["lopp"]) <= 5):
+            eelmine["lopp"] = t["lopp"]
+            eelmine["pikkus"] += t["pikkus"]
+        else:
+            tulemus.append(dict(t))
+    return sorted(tulemus, key=lambda t: (t["algus"], t["grupp"] or ""))
+
+
 def aine_nimi(lyhend, taisnimi):
     alus = re.sub(r" [LP]$", "", lyhend)
     return AINED.get(lyhend) or AINED.get(alus) or re.sub(r" [LP]$", "", taisnimi)
@@ -136,7 +156,7 @@ def main():
         })
 
     for p in paevad.values():
-        p["tunnid"].sort(key=lambda t: (t["algus"], t["grupp"] or ""))
+        p["tunnid"] = liida_paaristunnid(sorted(p["tunnid"], key=lambda t: (t["algus"], t["grupp"] or "")))
 
     andmed = {
         "kool": "Haabneeme Kool",

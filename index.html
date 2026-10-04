@@ -5,19 +5,109 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>4B tunniplaan</title>
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, sans-serif;
-         background: #1f6fb2; color: #fff; text-align: center; padding: 16px; box-sizing: border-box; }
-  h1 { font-size: clamp(2.5rem, 10vw, 5rem); margin: 0 0 .2em; }
-  p { font-size: clamp(1.1rem, 4vw, 1.6rem); margin: .3em 0; }
-  .ehitus { font-size: clamp(4rem, 20vw, 9rem); }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #eef3f8; color: #1d2733; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+  .teade { background: #ffe066; border-radius: 14px; padding: 14px; font-size: 1.25rem; font-weight: 700;
+           text-align: center; margin-bottom: 14px; }
+  h1 { font-size: 2.6rem; margin: 4px 0 0; text-align: center; }
+  .kuupaev { font-size: 1.4rem; text-align: center; color: #4a5a6b; margin-bottom: 18px; }
+  .tund { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
+          box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+  .aeg { font-size: 1.15rem; font-weight: 700; color: #1f6fb2; }
+  .grupid { display: flex; gap: 10px; margin-top: 6px; }
+  .grupid > div { flex: 1; min-width: 0; }
+  .grupid > div + div { border-left: 2px dashed #cdd6e0; padding-left: 10px; }
+  .grupinimi { font-size: .9rem; font-weight: 700; color: #7a4fb5; }
+  .aine { font-size: 1.5rem; font-weight: 800; margin: 2px 0; overflow-wrap: anywhere; }
+  .info { font-size: 1.1rem; color: #4a5a6b; }
+  .vahe { text-align: center; font-size: 1.1rem; color: #4a5a6b; padding: 8px; margin-bottom: 10px;
+          border: 2px dashed #cdd6e0; border-radius: 14px; }
+  .sook { background: #ffd8a8; color: #7a3e00; border: none; font-size: 1.35rem; font-weight: 800; padding: 14px; }
+  a { color: #1f6fb2; }
 </style>
 </head>
 <body>
-  <main>
-    <div class="ehitus">🚧</div>
-    <h1>4B tunniplaan</h1>
-    <p>Siin ehitatakse midagi…</p>
-    <p>Valmib 5. oktoobril koos 4B klassiga!</p>
-  </main>
+<main id="sisu"><p class="kuupaev">Laen tunniplaani…</p></main>
+<script src="andmed.js"></script>
+<script src="laadija.js"></script>
+<script>
+const TZ = "Europe/Tallinn";
+const min = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const kell = (hhmm) => hhmm.replace(/^0/, "");
+
+// Praegune Eesti aeg kujul { kuupaev: "2026-10-05", minut: 545 }. ?aeg=2026-10-09T17:00 testimiseks.
+function praegu() {
+  const aeg = new URLSearchParams(location.search).get("aeg");
+  if (aeg && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(aeg)) return { kuupaev: aeg.slice(0, 10), minut: min(aeg.slice(11, 16)) };
+  const osad = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map((p) => [p.type, p.value]));
+  return { kuupaev: `${osad.year}-${osad.month}-${osad.day}`, minut: Number(osad.hour) * 60 + Number(osad.minute) };
+}
+
+function valiPaev(andmed, nyyd) {
+  const paevad = andmed.paevad.filter((p) => p.tunnid.length);
+  const tana = paevad.find((p) => p.kuupaev === nyyd.kuupaev);
+  if (tana) {
+    const lopp = Math.max(...tana.tunnid.map((t) => min(t.lopp)));
+    if (nyyd.minut <= lopp + 60) return { paev: tana, jargmine: false };
+  }
+  const jargmine = paevad.filter((p) => p.kuupaev > nyyd.kuupaev).sort((a, b) => a.kuupaev.localeCompare(b.kuupaev))[0];
+  return jargmine ? { paev: jargmine, jargmine: true, olitana: !!tana } : null;
+}
+
+function tunniKaart(tunnid) {
+  const t0 = tunnid[0];
+  const osa = (t) => `<div>
+      ${t.grupp ? `<div class="grupinimi">${esc(t.grupp)}</div>` : ""}
+      <div class="aine">${esc(t.aine)}</div>
+      <div class="info">👩‍🏫 ${esc(t.opetajad.join(", ") || "—")}</div>
+      <div class="info">🚪 ${esc(t.ruum || "—")}</div>
+    </div>`;
+  return `<div class="tund"><div class="aeg">🕘 ${kell(t0.algus)}–${kell(t0.lopp)}</div>
+    <div class="grupid">${tunnid.map(osa).join("")}</div></div>`;
+}
+
+function joonista(andmed) {
+  const sisu = document.getElementById("sisu");
+  const valik = valiPaev(andmed, praegu());
+  if (!valik) {
+    sisu.innerHTML = `<div class="teade">😕 Mul pole praegu õiget tunniplaani.</div>
+      <p class="kuupaev">Vaata kooli tunniplaani: <a href="${esc(andmed.allikas)}">EduPage</a></p>`;
+    return;
+  }
+  const { paev } = valik;
+  const [a, k, p] = paev.kuupaev.split("-");
+  const kuud = ["jaanuar", "veebruar", "märts", "aprill", "mai", "juuni", "juuli", "august", "september", "oktoober", "november", "detsember"];
+  let html = "";
+  if (valik.jargmine) html += `<div class="teade">${valik.olitana ? "🎉 Tänased tunnid on läbi! " : "🌙 Täna tunde pole. "}Näitan järgmist koolipäeva.</div>`;
+  html += `<h1>${esc(paev.nimi)}</h1><div class="kuupaev">${Number(p)}. ${kuud[k - 1]}</div>`;
+
+  // Rühmita samal ajal toimuvad tunnid (grupid) kokku
+  const plokid = [];
+  for (const t of [...paev.tunnid].sort((x, y) => min(x.algus) - min(y.algus))) {
+    const viimane = plokid[plokid.length - 1];
+    if (viimane && viimane[0].algus === t.algus && viimane[0].lopp === t.lopp) viimane.push(t);
+    else plokid.push([t]);
+  }
+  const sook = andmed.soogivahetund;
+  plokid.forEach((plokk, i) => {
+    if (i > 0) {
+      const eelLopp = plokid[i - 1][0].lopp, algus = plokk[0].algus;
+      if (min(algus) - min(eelLopp) > 5) {
+        const onSook = sook && min(eelLopp) < min(sook.lopp) && min(algus) > min(sook.algus);
+        html += onSook
+          ? `<div class="vahe sook">🍽️ Söögivahetund ${kell(sook.algus)}–${kell(sook.lopp)}</div>`
+          : `<div class="vahe">🤸 Vahetund ${kell(eelLopp)}–${kell(algus)}</div>`;
+      }
+    }
+    html += tunniKaart(plokk);
+  });
+  sisu.innerHTML = html;
+}
+
+(async () => joonista(await laeTunniplaan()))();
+</script>
 </body>
 </html>

@@ -8,6 +8,7 @@
 // Vastus on 15 minutit vahemälus, et EduPage'i mitte koormata.
 
 const KOOL = "https://haabneeme.edupage.org";
+const TOITLUSTAMINE = "https://haabneeme.edu.ee/muu-info/toitlustamine/";
 const NADALAID = 3; // mitu nädalat ette (jooksev nädal kaasa arvatud)
 const VAHEMALU_SEK = 15 * 60;
 
@@ -115,7 +116,29 @@ async function laeTunniplaan(klassNimi) {
 
   const andmed = teisenda(T, kaardid, klassNimi, algus, lopp);
   if (!andmed.paevad.some((p) => p.tunnid.length)) throw new Error("EduPage'ist ei tulnud ühtegi tundi");
+  andmed.soogivahetund = await soogivahetund(klassNimi).catch(() => null);
   return andmed;
+}
+
+// Loeb kooli kodulehelt söögivahetunni aja, nt "10.25-10.50 (1.-4. klass)" -> { algus: "10:25", lopp: "10:50" }
+async function soogivahetund(klassNimi) {
+  const r = await fetch(TOITLUSTAMINE, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "Mozilla/5.0 (4B tunniplaan)" } });
+  if (!r.ok) return null;
+  return leiaSoogivahetund(await r.text(), klassNimi);
+}
+
+export function leiaSoogivahetund(leht, klassNimi) {
+  const aste = parseInt(klassNimi, 10);
+  const tekst = leht.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&ndash;|&#8211;/g, "–");
+  const i = tekst.indexOf("Söögivahetun");
+  if (i < 0) return null;
+  const muster = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})\s*\(\s*(\d+)\.?\s*[-–]\s*(\d+)\.?\s*klass/g;
+  for (const m of tekst.slice(i, i + 300).matchAll(muster)) {
+    if (Number(m[5]) <= aste && aste <= Number(m[6])) {
+      return { algus: `${m[1].padStart(2, "0")}:${m[2]}`, lopp: `${m[3].padStart(2, "0")}:${m[4]}`, allikas: TOITLUSTAMINE };
+    }
+  }
+  return null;
 }
 
 function aineNimi(lyhend, taisnimi) {
@@ -170,6 +193,7 @@ export function teisenda(T, kaardid, klassNimi, algus, lopp) {
     allikas: `${KOOL}/timetable/`,
     alates: algus,
     kuni: lopp,
+    soogivahetund: null,
     paevad: Object.values(paevad),
   };
 }

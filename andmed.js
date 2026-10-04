@@ -6,6 +6,11 @@ window.TUNNIPLAAN = {
   "allikas": "https://haabneeme.edupage.org/timetable/",
   "alates": "2026-09-28",
   "kuni": "2026-10-18",
+  "soogivahetund": {
+    "algus": "10:25",
+    "lopp": "10:50",
+    "allikas": "https://haabneeme.edu.ee/muu-info/toitlustamine/"
+  },
   "paevad": [
     {
       "kuupaev": "2026-09-28",

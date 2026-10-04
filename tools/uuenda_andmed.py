@@ -10,6 +10,7 @@ seepärast käivitab GitHub Actions selle skripti regulaarselt
 Andmed on kuupäevapõhised: kui kool avaldab EduPage'is uue tunniplaani
 versiooni, tulevad muudatused järgmise uuendusega kaasa.
 """
+import html
 import json
 import re
 import sys
@@ -19,6 +20,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 KOOL = "https://haabneeme.edupage.org"
+TOITLUSTAMINE = "https://haabneeme.edu.ee/muu-info/toitlustamine/"
 KLASS = sys.argv[1] if len(sys.argv) > 1 else "4B"
 VALJUND = Path(__file__).resolve().parent.parent / "andmed.js"
 NADALAID = 3  # mitu nädalat ette (jooksev nädal kaasa arvatud)
@@ -51,6 +53,27 @@ def edupage(func, args):
     req = urllib.request.Request(url, body, {"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)["r"]
+
+
+def soogivahetund(klass):
+    """Loeb kooli kodulehelt söögivahetunni aja, nt "10.25-10.50 (1.-4. klass)" -> {"algus": "10:25", "lopp": "10:50"}."""
+    aste = int(re.match(r"\d+", klass)[0])
+    try:
+        req = urllib.request.Request(TOITLUSTAMINE, headers={"User-Agent": "Mozilla/5.0 (4B tunniplaan)"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            leht = r.read().decode("utf-8", "replace")
+    except Exception as viga:
+        print(f"Söögivahetundi ei saanud lugeda: {viga}")
+        return None
+    tekst = html.unescape(re.sub(r"<[^>]+>", " ", leht))
+    i = tekst.find("Söögivahetun")
+    if i < 0:
+        return None
+    muster = r"(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})\s*\(\s*(\d+)\.?\s*[-–]\s*(\d+)\.?\s*klass"
+    for m in re.finditer(muster, tekst[i:i + 300]):
+        if int(m[5]) <= aste <= int(m[6]):
+            return {"algus": f"{int(m[1]):02}:{m[2]}", "lopp": f"{int(m[3]):02}:{m[4]}", "allikas": TOITLUSTAMINE}
+    return None
 
 
 def aine_nimi(lyhend, taisnimi):
@@ -121,6 +144,7 @@ def main():
         "allikas": f"{KOOL}/timetable/",
         "alates": algus.isoformat(),
         "kuni": lopp.isoformat(),
+        "soogivahetund": soogivahetund(KLASS),
         "paevad": list(paevad.values()),
     }
     if not any(p["tunnid"] for p in andmed["paevad"]):

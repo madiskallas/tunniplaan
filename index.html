@@ -11,11 +11,11 @@
   h1 { font-size: 2.6rem; margin: 8px 0 0; text-align: center; }
   .kuupaev { font-size: 1.4rem; text-align: center; color: #4a5a6a; margin-bottom: 16px; }
   .kaart { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 2px 6px #0001; }
-  .aeg { font-size: 1.15rem; font-weight: 700; color: #1f6fb2; }
+  .aeg { font-size: 1.15rem; font-weight: 700; }
   .aine { font-size: 1.5rem; font-weight: 800; margin: 4px 0; }
-  .info { font-size: 1.1rem; color: #4a5a6a; }
+  .info { font-size: 1.1rem; }
   .grupid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
-  .grupp { background: #f3f6fa; border-radius: 12px; padding: 10px; }
+  .grupp { background: #f3f6fa; box-shadow: 0 1px 4px #0002; border-radius: 12px; padding: 10px; }
   .grupp .silt { font-weight: 700; font-size: 1rem; color: #7a4fb0; }
   .grupp .aine { font-size: 1.2rem; }
   .vahetund { text-align: center; font-size: 1.1rem; color: #4a5a6a; padding: 8px; margin-bottom: 10px; border: 2px dashed #b8c4d0; border-radius: 14px; }
@@ -27,6 +27,7 @@
 <main id="app">Laen tunniplaani…</main>
 <script src="andmed.js"></script>
 <script src="laadija.js"></script>
+<script src="seaded.js"></script>
 <script>
 // Kell Eesti ajas (või ?aeg=2026-10-09T17:00 testimiseks)
 function praegu() {
@@ -39,6 +40,10 @@ function praegu() {
 }
 const minutid = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
 const kell = t => t.replace(/^0/, "");
+// Aine valikud seaded.js-ist (nt "Mudilaskoor (ringitund)" → "Mudilaskoor")
+const seade = aine => { const S = window.SEADED || {}; return S[aine] || S[Object.keys(S).find(k => aine && aine.startsWith(k))] || null; };
+const nimi = aine => { const s = seade(aine); return (s ? s.emoji + " " : "") + esc(aine); };
+const taust = aine => { const s = seade(aine); return s ? ` style="background:${s.varv}"` : ""; };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function valiPaev(andmed, nyyd) {
@@ -57,12 +62,12 @@ function tunniKaart(tunnid) {
   const aeg = `<div class="aeg">${kell(t.algus)}–${kell(t.lopp)}</div>`;
   if (tunnid.length > 1 || t.grupp) {
     return `<div class="kaart">${aeg}<div class="grupid">${tunnid.map(g => `
-      <div class="grupp"><div class="silt">${esc(g.grupp || "")}</div>
-        <div class="aine">${esc(g.aine)}</div>
+      <div class="grupp"${taust(g.aine)}><div class="silt">${esc(g.grupp || "")}</div>
+        <div class="aine">${nimi(g.aine)}</div>
         <div class="info">👩‍🏫 ${esc(g.opetajad.join(", "))}</div>
         <div class="info">🚪 ${esc(g.ruum)}</div></div>`).join("")}</div></div>`;
   }
-  return `<div class="kaart">${aeg}<div class="aine">${esc(t.aine)}</div>
+  return `<div class="kaart"${taust(t.aine)}>${aeg}<div class="aine">${nimi(t.aine)}</div>
     <div class="info">👩‍🏫 ${esc(t.opetajad.join(", "))}</div>
     <div class="info">🚪 Klass: ${esc(t.ruum)}</div></div>`;
 }
@@ -101,8 +106,8 @@ async function alusta() {
         const algT = pesad[i - 1].find(t => minutid(t.lopp) === eelmLopp).lopp;
         const onSook = sook && minutid(sook.algus) < algus && minutid(sook.lopp) > eelmLopp;
         html += onSook
-          ? `<div class="vahetund sook">🍽️ Söögivahetund ${kell(algT)}–${kell(pesa[0].algus)}</div>`
-          : `<div class="vahetund">⏸️ Vahetund ${kell(algT)}–${kell(pesa[0].algus)}</div>`;
+          ? `<div class="vahetund sook"${taust("Söögivahetund")}>${seade("Söögivahetund")?.emoji || "🍽️"} Söögivahetund ${kell(algT)}–${kell(pesa[0].algus)}</div>`
+          : `<div class="vahetund"${taust("Vahetund")}>${seade("Vahetund")?.emoji || "⏸️"} Vahetund ${kell(algT)}–${kell(pesa[0].algus)}</div>`;
       }
     }
     html += tunniKaart(pesa);

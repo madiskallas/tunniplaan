@@ -57,10 +57,9 @@ const minutid = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
 const kell = t => t.replace(/^0/, "");
 // Aine valikud seaded.js-ist (nt "Mudilaskoor (ringitund)" → "Mudilaskoor")
 const seade = aine => { const S = window.SEADED || {}; return S[aine] || S[Object.keys(S).find(k => aine && aine.startsWith(k))] || null; };
-// Poolituskohad eesti õigekirja järgi (silbid), "|" → peidetud sidekriips
-const POOLITUS = ["Teh|no|loo|gia|õpe|tus", "Kä|si|töö", "Ke|ha|li|ne", "kas|va|tus", "Loo|dus|õpe|tus", "Ini|me|se|õpe|tus",
-  "Kuns|ti|õpe|tus", "Klas|si|ju|ha|ta|ja|tund", "Mu|di|las|koor", "Ma|te|maa|ti|ka", "Jal|grat|ta|koo|li|tus",
-  "Tant|su|li|ne", "lii|ku|mi|ne", "Ing|li|se", "Muu|si|ka", "Uju|mi|ne", "rin|gi|tund"];
+// Poolituskohad eesti õigekirja järgi (sõnaosade piirilt), "|" → peidetud sidekriips
+const POOLITUS = ["Tehno|loogia|õpetus", "Käsi|töö", "Keha|line", "kasva|tus", "Loodus|õpetus", "Inimese|õpetus",
+  "Kunsti|õpetus", "Klassi|juhataja|tund", "Mudilas|koor", "Jalg|ratta|koolitus", "Tantsu|line", "liiku|mine", "ringi|tund"];
 const poolita = tekst => POOLITUS.reduce((t, sona) => t.replace(sona.replaceAll("|", ""), sona.replaceAll("|", "&shy;")), tekst);
 const nimi = aine => { const s = seade(aine); return (s ? s.emoji + " " : "") + poolita(esc(aine)); };
 const taust = aine => { const s = seade(aine); return s ? ` style="background:${s.varv}"` : ""; };

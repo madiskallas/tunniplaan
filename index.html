@@ -137,7 +137,7 @@ async function alusta() {
     html += tunniKaart(pesa, i === praeguI);
   });
   app.innerHTML = html;
-  document.querySelector(".praegu")?.scrollIntoView({ block: "center" });
+  if (!window.keritud) { window.keritud = true; document.querySelector(".praegu")?.scrollIntoView({ block: "center" }); }
 }
 
 // Naljakates poosides metsaloomad (orav ja karu on kindlasti olemas!)

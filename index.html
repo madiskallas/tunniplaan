@@ -143,10 +143,10 @@ async function alusta() {
 
 // Naljakates poosides metsaloomad (orav ja karu on kindlasti olemas!)
 const loomad = document.getElementById("loomad");
-["🐿️", "🐻", "🦊", "🦔", "🦉", "🐰", "🦌", "🐿️", "🐻"].forEach((loom, i) => {
+["🐿️", "🐻", "📚", "🐎", "🦊", "📕", "🦔", "🐴", "🦉", "📗", "🐰", "🐎", "🦌", "📘", "🐿️", "🐻"].forEach((loom, i) => {
   const d = document.createElement("div");
   d.className = "loom";
-  d.style.top = (5 + i * 10.5) + "%";
+  d.style.top = (3 + i * 6) + "%";
   d.style.animationDuration = (14 + (i * 7) % 12) + "s";
   d.style.animationDelay = (-i * 3.3) + "s";
   const poos = ["scaleX(-1)", "rotate(180deg)", "rotate(90deg)", "scaleY(-1)", "rotate(-60deg)"][i % 5];

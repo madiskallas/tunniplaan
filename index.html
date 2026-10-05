@@ -37,6 +37,8 @@
     50% { box-shadow: 0 0 0 12px #ff3b7f55, 0 0 34px 12px #ffd43bcc; transform: scale(1.05); }
   }
   @keyframes sadele { 0%, 100% { transform: scale(0) rotate(0); opacity: 0; } 50% { transform: scale(1.3) rotate(90deg); opacity: 1; } }
+  .nali { background: #fff; border: 3px solid #ffd43b; border-radius: 16px; padding: 14px; font-size: 1.2rem; margin-bottom: 12px; }
+  .nali b { display: block; margin-bottom: 4px; }
   .loendur { background: #1d2733; color: #fff; border-radius: 18px; padding: 16px; text-align: center; margin-bottom: 12px; }
   .loendur b { display: block; font-size: 4rem; line-height: 1.1; }
   .loendur span { font-size: 1.3rem; }
@@ -103,6 +105,71 @@ function tunniKaart(tunnid, praegu) {
     <div class="info">🚪 Klass: ${esc(t.ruum)}</div></div>`;
 }
 
+// 60 anekdooti – iga päev uus
+const NALJAD = [
+"Õpetaja: „Juku, miks su kodune töö on kassi käekirjaga?“ Juku: „Sest kass tegi selle!“",
+"Miks matemaatikaõpik kurb on? Sest tal on nii palju probleeme.",
+"Ema: „Miks sa kartulile laulad?“ Mari: „Õpetaja ütles, et kartulil on silmad. Äkki on tal ka kõrvad!“",
+"Õpetaja: „Nimeta viis Aafrika looma.“ Kalle: „Neli elevanti ja üks lõvi!“",
+"Miks orav matemaatikat armastab? Sest ta oskab nii hästi pähkleid kokku lugeda!",
+"Miks kala kooli ei lähe? Sest tal on juba oma parv!",
+"Juku: „Isa, kas sa oskad pimedas kirjutada?“ Isa: „Oskan.“ Juku: „Siis kustuta tuli ja kirjuta mu päevikule alla!“",
+"Õpetaja: „Mari, näita kaardil, kus on Ameerika.“ Mari näitab. „Tubli! Ja kes avastas Ameerika?“ Klass: „Mari!“",
+"Miks lumememm porgandit ei söö? Sest see on tema nina!",
+"Kaks lehma on karjamaal. Üks ütleb: „Muuu!“ Teine: „Võtsid mul sõna suust!“",
+"Õpetaja: „Kalle, mis on 2 pluss 2?“ Kalle: „4.“ Õpetaja: „Hea!“ Kalle: „Hea? See on ju täiesti õige!“",
+"Isa: „Miks sa magad matemaatikaõpik padja all?“ Poeg: „Et numbrid öösel pähe imbuks!“",
+"Kuidas panna elevant külmkappi? Avad ukse, paned elevandi sisse ja paned ukse kinni!",
+"Kuidas panna kaelkirjak külmkappi? Avad ukse, võtad elevandi välja ja paned kaelkirjaku sisse!",
+"Loomad korraldavad pidu. Kõik on kohal, ainult üks puudub. Kes? Kaelkirjak – ta on ju külmkapis!",
+"Õpetaja: „Miks sa hiljaks jäid?“ Juku: „Tee ääres oli silt: „Kool – sõida aeglaselt!““",
+"Miks pliiats kurb oli? Sest ta oli nüri ja keegi ei teritanud teda.",
+"Ema: „Kes sõi kõik kommid ära?“ Poeg: „Mitte mina! Minu kõht!“",
+"Mis on mustvalge ja punane? Pingviin, kes häbeneb.",
+"Õpetaja: „Mis juhtub, kui jää sulab?“ Mari: „Siis tuleb kevad!“",
+"Miks öökull koolis hästi õpib? Sest ta on alati huu-huu-huvitatud!",
+"Mis on rebase lemmikmäng? Peitus – ta on ju nii kaval!",
+"Miks tomat punastas? Sest ta nägi salatit riideid vahetamas!",
+"Õpetaja: „Juku, kirjuta tahvlile sõna „kass“.“ Juku joonistab tahvlile kassi: „Nii on kiirem!“",
+"Õpetaja: „Kes oskab öelda, mis on tolm?“ Juku: „Pori, mis on ära kuivanud!“",
+"Mis on roheline ja hüppab? Konn, kes ootab, et teda prints suudleks.",
+"Miks karu talvel magab? Sest keegi ei julge teda äratada!",
+"Miks pall nuttis? Sest teda löödi kogu aeg jalaga.",
+"Mis on kõige naljakam loom? Hüään – ta naerab kogu aeg.",
+"Miks orav kooli tuli? Ta tahtis saada pähklikamaks!",
+"Mis on kõige parem klass? 4B muidugi!",
+"Õpetaja: „Kalle, miks su kirjand koerast on täpselt sama, mis su vennal?“ Kalle: „Sest meil on sama koer!“",
+"Miks hobune telefoni ei võta? Sest ta ütleb alati ainult „hirrr“!",
+"Juku: „Ema, kas sa oled mulle pahane asja eest, mida ma ei teinud?“ Ema: „Muidugi mitte.“ Juku: „Hea, ma ei teinud koduseid ülesandeid.“",
+"Miks raamatukogu nii kõrge maja on? Sest seal on nii palju lugusid!",
+"Õpetaja: „Mis on vee keemiline valem?“ Juku: „H, I, J, K, L, M, N, O.“ „Miks nii?“ „Te ise ütlesite: H kuni O!“",
+"Mis on valge ja ei tee häält? Vaikne lumi.",
+"Karupoeg küsib emalt: „Kas ma olen päris karu?“ Ema: „Muidugi!“ „Kas isa ka?“ „Jah!“ „Miks mul siis nii külm on?“ „Sest sa oled jääkaru!“",
+"Isa: „Mis sa koolis täna õppisid?“ Poeg: „Ilmselt mitte piisavalt, sest homme pean jälle minema.“",
+"Mis teeb igal hommikul „rrrr“, aga pole koer? Äratuskell!",
+"Õpetaja: „Juku, kui sul on 10 kommi ja sa annad Marile 5, mis siis juhtub?“ Juku: „Mari on õnnelik ja mina kurb.“",
+"Siil läheb juuksurisse. Juuksur vaatab ja ütleb: „Teile sobiks pigem kammiga ise.“",
+"Miks lehm kellukest kannab? Sest tema sarved ei tööta!",
+"Õpetaja: „Mari, too näide pikast lausest.“ Mari: „Vanglas.“",
+"Kaks hiirt istuvad kinos. Üks küsib: „Kas see film on raamatust parem?“ Teine: „Ei tea, ma sõin raamatu ära.“",
+"Mis on suur, hall ja käib trepist üles? Elevant, kes ei leidnud lifti.",
+"Miks karu jalgrattaga sõita ei oska? Sest tal on alati kaks paremat käppa!",
+"Ema: „Miks su sokid erinevat värvi on?“ Poeg: „Mul on kodus veel teine täpselt samasugune paar!“",
+"Mis lendab ja on kõige targem? Õpik – vähemalt minu tunniplaanis!",
+"Juku: „Õpetaja, kas inimest võib karistada asja eest, mida ta pole teinud?“ Õpetaja: „Ei.“ Juku: „Super, ma pole kodust tööd teinud!“",
+"Miks kass arvuti juurde istus? Et hiirt valvata!",
+"Õpetaja: „Kalle, kus on su kodune töö?“ Kalle: „Mu koer sõi selle ära.“ „Sul pole ju koera!“ „See oli laenatud koer.“",
+"Kuidas saab teada, et elevant on olnud külmkapis? Võis on täis jalajälgi!",
+"Mis on orava lemmiktund? Pähkli-tund ehk loodusõpetus!",
+"Miks pingviinid lennata ei viitsi? Sest jalutada on palju lahedam!",
+"Mari: „Ema, ma tahan koera!“ Ema: „Sa saad kala.“ Mari: „Kas ma saan siis kalaga jalutamas käia?“",
+"Õpetaja: „Juku, nimeta üks pikk jõgi.“ Juku: „Emajõgi – sest ema räägib alati pikalt!“",
+"Mis jookseb, aga ei väsi kunagi? Vesi kraanist!",
+"Karu läheb poodi ja küsib: „Kas teil mett on?“ Müüja: „Ei ole.“ Järgmisel päeval küsib karu jälle. Kolmandal päeval on uksel silt: „Karu, mett ei ole!“",
+"Õpetaja: „Miks sa aknast välja vaatad?“ Juku: „Te ise ütlesite, et vaadake tulevikku!“"
+];
+const paevaNali = kuupaev => NALJAD[Math.floor(Date.parse(kuupaev + "T00:00Z") / 864e5) % NALJAD.length];
+
 async function alusta() {
   const app = document.getElementById("app");
   const andmed = await laeTunniplaan();
@@ -137,6 +204,9 @@ async function alusta() {
       ? `<div class="loendur"><span>⏰ Tunni lõpuni</span><b>${lopp(pesa) - nyyd.min} min</b></div>`
       : `<div class="loendur"><span>⏳ Järgmise tunni alguseni</span><b>${algus - nyyd.min} min</b></div>`;
   }
+  // Kooliväline aeg: koolipäev läbi või esimene tund pole veel alanud
+  if (jargmine || nyyd.min < minutid(pesad[0][0].algus))
+    html += `<div class="nali"><b>😂 Päeva anekdoot</b>${esc(paevaNali(nyyd.kuupaev))}</div>`;
   const [a, k, p] = paev.kuupaev.split("-");
   html += `<h1>${esc(paev.nimi)}</h1><div class="kuupaev">${+p}.${+k}.${a}</div>`;
   pesad.forEach((pesa, i) => {

@@ -5,19 +5,111 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>4B tunniplaan</title>
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, sans-serif;
-         background: #1f6fb2; color: #fff; text-align: center; padding: 16px; box-sizing: border-box; }
-  h1 { font-size: clamp(2.5rem, 10vw, 5rem); margin: 0 0 .2em; }
-  p { font-size: clamp(1.1rem, 4vw, 1.6rem); margin: .3em 0; }
-  .ehitus { font-size: clamp(4rem, 20vw, 9rem); }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #eef3f8; color: #1d2733; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+  .teade { background: #ffe066; border-radius: 14px; padding: 14px; font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 12px; }
+  h1 { font-size: 2.6rem; margin: 8px 0 0; text-align: center; }
+  .kuupaev { font-size: 1.4rem; text-align: center; color: #4a5a6a; margin-bottom: 16px; }
+  .kaart { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 2px 6px #0001; }
+  .aeg { font-size: 1.15rem; font-weight: 700; color: #1f6fb2; }
+  .aine { font-size: 1.5rem; font-weight: 800; margin: 4px 0; }
+  .info { font-size: 1.1rem; color: #4a5a6a; }
+  .grupid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .grupp { background: #f3f6fa; border-radius: 12px; padding: 10px; }
+  .grupp .silt { font-weight: 700; font-size: 1rem; color: #7a4fb0; }
+  .grupp .aine { font-size: 1.2rem; }
+  .vahetund { text-align: center; font-size: 1.1rem; color: #4a5a6a; padding: 8px; margin-bottom: 10px; border: 2px dashed #b8c4d0; border-radius: 14px; }
+  .sook { background: #ffd8a8; border: none; color: #7a3e00; font-size: 1.35rem; font-weight: 800; padding: 14px; }
+  a { color: #1f6fb2; }
 </style>
 </head>
 <body>
-  <main>
-    <div class="ehitus">🚧</div>
-    <h1>4B tunniplaan</h1>
-    <p>Siin ehitatakse midagi…</p>
-    <p>Valmib 5. oktoobril koos 4B klassiga!</p>
-  </main>
+<main id="app">Laen tunniplaani…</main>
+<script src="andmed.js"></script>
+<script src="laadija.js"></script>
+<script>
+// Kell Eesti ajas (või ?aeg=2026-10-09T17:00 testimiseks)
+function praegu() {
+  const aeg = new URLSearchParams(location.search).get("aeg");
+  if (aeg && /^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(aeg)) return { kuupaev: aeg.slice(0, 10), min: minutid(aeg.slice(11, 16)) };
+  const o = {};
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Tallinn", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).forEach(p => o[p.type] = p.value);
+  return { kuupaev: `${o.year}-${o.month}-${o.day}`, min: minutid(`${o.hour}:${o.minute}`) };
+}
+const minutid = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+const kell = t => t.replace(/^0/, "");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function valiPaev(andmed, nyyd) {
+  const paevad = andmed.paevad.filter(p => p.tunnid.length);
+  const tana = paevad.find(p => p.kuupaev === nyyd.kuupaev);
+  if (tana) {
+    const lopp = Math.max(...tana.tunnid.map(t => minutid(t.lopp)));
+    if (nyyd.min <= lopp + 60) return { paev: tana, jargmine: false };
+  }
+  const jarg = paevad.filter(p => p.kuupaev > nyyd.kuupaev).sort((a, b) => a.kuupaev.localeCompare(b.kuupaev))[0];
+  return jarg ? { paev: jarg, jargmine: true, tanaOliKool: !!tana } : null;
+}
+
+function tunniKaart(tunnid) {
+  const t = tunnid[0];
+  const aeg = `<div class="aeg">${kell(t.algus)}–${kell(t.lopp)}</div>`;
+  if (tunnid.length > 1 || t.grupp) {
+    return `<div class="kaart">${aeg}<div class="grupid">${tunnid.map(g => `
+      <div class="grupp"><div class="silt">${esc(g.grupp || "")}</div>
+        <div class="aine">${esc(g.aine)}</div>
+        <div class="info">👩‍🏫 ${esc(g.opetajad.join(", "))}</div>
+        <div class="info">🚪 ${esc(g.ruum)}</div></div>`).join("")}</div></div>`;
+  }
+  return `<div class="kaart">${aeg}<div class="aine">${esc(t.aine)}</div>
+    <div class="info">👩‍🏫 ${esc(t.opetajad.join(", "))}</div>
+    <div class="info">🚪 Klass: ${esc(t.ruum)}</div></div>`;
+}
+
+async function alusta() {
+  const app = document.getElementById("app");
+  const andmed = await laeTunniplaan();
+  const nyyd = praegu();
+  const valik = valiPaev(andmed, nyyd);
+  if (!valik) {
+    app.innerHTML = `<div class="teade">😕 Mul pole praegu õiget tunniplaani.</div>
+      <p style="font-size:1.2rem;text-align:center">Vaata kooli tunniplaani: <a href="${esc(andmed.allikas)}">${esc(andmed.allikas)}</a></p>`;
+    return;
+  }
+  const { paev, jargmine, tanaOliKool } = valik;
+  // Rühmita samal ajal algavad tunnid (grupid) kokku
+  const pesad = [];
+  [...paev.tunnid].sort((a, b) => a.algus.localeCompare(b.algus)).forEach(t => {
+    const p = pesad.find(x => x[0].algus === t.algus);
+    p ? p.push(t) : pesad.push([t]);
+  });
+  const sook = andmed.soogivahetund;
+  let html = "";
+  if (jargmine) {
+    const homme = new Date(nyyd.kuupaev + "T12:00Z"); homme.setUTCDate(homme.getUTCDate() + 1);
+    const sona = paev.kuupaev === homme.toISOString().slice(0, 10) ? "homseid" : "järgmise koolipäeva";
+    html += `<div class="teade">${tanaOliKool ? "🎉 Tänased tunnid on läbi!" : "😎 Täna kooli pole!"} Näitan ${sona} tunde.</div>`;
+  }
+  const [a, k, p] = paev.kuupaev.split("-");
+  html += `<h1>${esc(paev.nimi)}</h1><div class="kuupaev">${+p}.${+k}.${a}</div>`;
+  pesad.forEach((pesa, i) => {
+    if (i > 0) {
+      const eelmLopp = Math.max(...pesad[i - 1].map(t => minutid(t.lopp)));
+      const algus = minutid(pesa[0].algus);
+      if (algus - eelmLopp > 5) {
+        const algT = pesad[i - 1].find(t => minutid(t.lopp) === eelmLopp).lopp;
+        const onSook = sook && minutid(sook.algus) < algus && minutid(sook.lopp) > eelmLopp;
+        html += onSook
+          ? `<div class="vahetund sook">🍽️ Söögivahetund ${kell(algT)}–${kell(pesa[0].algus)}</div>`
+          : `<div class="vahetund">⏸️ Vahetund ${kell(algT)}–${kell(pesa[0].algus)}</div>`;
+      }
+    }
+    html += tunniKaart(pesa);
+  });
+  app.innerHTML = html;
+}
+alusta();
+</script>
 </body>
 </html>

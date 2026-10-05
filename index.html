@@ -131,7 +131,7 @@ async function alusta() {
     if (i > 0) {
       const eelmLopp = Math.max(...pesad[i - 1].map(t => minutid(t.lopp)));
       const algus = minutid(pesa[0].algus);
-      if (algus - eelmLopp > 5) {
+      if (algus - eelmLopp > 0) {
         const algT = pesad[i - 1].find(t => minutid(t.lopp) === eelmLopp).lopp;
         const onSook = sook && minutid(sook.algus) < algus && minutid(sook.lopp) > eelmLopp;
         html += onSook
